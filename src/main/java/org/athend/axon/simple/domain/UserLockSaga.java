@@ -13,6 +13,7 @@ import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.saga.annotation.AbstractAnnotatedSaga;
 import org.axonframework.saga.annotation.SagaEventHandler;
 import org.axonframework.saga.annotation.StartSaga;
+
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeConstants;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +22,7 @@ public class UserLockSaga extends AbstractAnnotatedSaga {
 	private static final long serialVersionUID = 1L;
 
 	// unlock after 5 secs
-	public static final Long UNLOCK_AFTER_MILLIS = new Long(DateTimeConstants.MILLIS_PER_SECOND * 5); 
+	public static final Long UNLOCK_AFTER_MILLIS = new Long(DateTimeConstants.MILLIS_PER_SECOND * 5);
 	
  	@Autowired @Setter private transient CommandGateway commandGateway;
 	@Autowired @Setter private transient EventScheduler eventScheduler;
