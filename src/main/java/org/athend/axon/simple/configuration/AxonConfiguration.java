@@ -2,11 +2,13 @@ package org.athend.axon.simple.configuration;
 
 import org.athend.axon.simple.domain.User;
 import org.athend.axon.simple.domain.UserLockSaga;
+import org.axonframework.commandhandling.AsynchronousCommandBus;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.common.caching.WeakReferenceCache;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
+import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
@@ -24,6 +26,7 @@ import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.messaging.interceptors.BeanValidationInterceptor;
+import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.spring.config.CommandHandlerSubscriber;
 import org.axonframework.spring.config.annotation.AnnotationCommandHandlerBeanPostProcessor;
@@ -34,6 +37,7 @@ import org.axonframework.spring.saga.SpringResourceInjector;
 import org.quartz.SchedulerException;
 import org.springframework.aop.aspectj.annotation.AnnotationAwareAspectJAutoProxyCreator;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
@@ -41,12 +45,14 @@ import org.springframework.scheduling.quartz.SchedulerFactoryBean;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
+import java.util.concurrent.Executor;
+
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.sql.DataSource;
 
 @Configuration
-@EnableTransactionManagement
+//@EnableTransactionManagement
 public class AxonConfiguration {
 
     @PersistenceContext
@@ -81,7 +87,8 @@ public class AxonConfiguration {
 
    @Bean
    public SimpleEntityManagerProvider simpleEntityManagerProvider(){
-       return new SimpleEntityManagerProvider(entityManager);
+       SimpleEntityManagerProvider simpleEntityManagerProvider = new SimpleEntityManagerProvider(entityManager);
+       return simpleEntityManagerProvider;
    }
 
     @Bean
@@ -101,8 +108,10 @@ public class AxonConfiguration {
 
     @Bean
     public CommandBus commandBus() {
-        SimpleCommandBus commandBus = new SimpleCommandBus();
+        //AsynchronousCommandBus commandBus = new AsynchronousCommandBus(getAsyncExecutor);
+        SimpleCommandBus commandBus = new SimpleCommandBus(springTransactionManager(), NoOpMessageMonitor.INSTANCE);
         commandBus.registerHandlerInterceptor(new BeanValidationInterceptor<>());
+        //commandBus.setTransactionManager(springTransactionManager());
         return commandBus;
 
     }
@@ -145,15 +154,15 @@ public class AxonConfiguration {
     }
 
    @Bean
-   SpringTransactionManager springTransactionManager(){
+   TransactionManager springTransactionManager(){
        return new SpringTransactionManager(platformTransactionManager);
    }
 
 
     @Bean
-    public EventScheduler eventScheduler(SpringTransactionManager springTransactionManager, EventBus eventBus) throws SchedulerException {
+    public EventScheduler eventScheduler() throws SchedulerException {
         QuartzEventScheduler eventScheduler = new QuartzEventScheduler();
-        eventScheduler.setEventBus(eventStore);
+        eventScheduler.setEventBus(eventBus());
         eventScheduler.setTransactionManager(springTransactionManager());
         eventScheduler.setScheduler(scheduleFactoryBean().getScheduler());
         eventScheduler.initialize();
@@ -209,7 +218,6 @@ public class AxonConfiguration {
             sagaManager(), //new SimpleEventHandlerInvoker(userLockSaga)
             eventStore);
         eventProcessor.start();
-
         return eventProcessor;
     }
 }

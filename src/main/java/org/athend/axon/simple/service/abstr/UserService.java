@@ -22,5 +22,5 @@ public interface UserService {
 	 * Sends a {@link UserLockCommand} to lock the user with the specified id
 	 * @param userId 
 	 */
-	void lockuser(UUID userId);
+	void lockUser(UUID userId);
 }

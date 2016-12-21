@@ -3,6 +3,8 @@ package org.athend.axon.simple.events;
 
 import java.io.Serializable;
 import java.util.UUID;
+
+import lombok.AllArgsConstructor;
 import lombok.Value;
 import org.athend.axon.simple.commands.UserCreateCommand;
 
@@ -11,10 +13,14 @@ import org.athend.axon.simple.commands.UserCreateCommand;
  * @see UserCreateCommand
  */
 @Value
+@AllArgsConstructor
 public class UserCreatedEvent implements Serializable {
 	
 	private static final long serialVersionUID = 1L;
 	
-	private UUID userId;
+
+    private UUID userId;
 	private String username;
+
+
 }
